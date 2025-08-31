@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Expense Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 400px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h2 { text-align: center; }
+    .balance {
+      font-size: 24px;
+      margin: 10px 0;
+      text-align: center;
+    }
+    .inc-exp-container {
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
+    }
+    .inc-exp-container div {
+      flex: 1;
+      padding: 10px;
+      margin: 0 5px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .income { background: #d4f8d4; }
+    .expense { background: #f8d4d4; }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0;
+    }
+    ul li {
+      background: #eee;
+      display: flex;
+      justify-content: space-between;
+      padding: 8px;
+      margin-bottom: 5px;
+      border-radius: 6px;
+    }
+    ul li.plus { border-right: 5px solid green; }
+    ul li.minus { border-right: 5px solid red; }
+    button {
+      border: none;
+      background: red;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .btn {
+      width: 100%;
+      padding: 10px;
+      background: blue;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>💰 Expense Tracker</h2>
+    <div class="balance">
+      Balance: $<span id="balance">0.00</span>
+    </div>
+    <div class="inc-exp-container">
+      <div class="income">
+        <h4>Income</h4>
+        <p id="money-plus">+0.00</p>
+      </div>
+      <div class="expense">
+        <h4>Expense</h4>
+        <p id="money-minus">-0.00</p>
+      </div>
+    </div>
+    <h3>History</h3>
+    <ul id="list"></ul>
+    <h3>Add new transaction</h3>
+    <form id="form">
+      <input type="text" id="text" placeholder="Enter description" required>
+      <input type="number" id="amount" placeholder="Enter amount (negative = expense)" required>
+      <select id="category">
+        <option>General</option>
+        <option>Food</option>
+        <option>Travel</option>
+        <option>Bills</option>
+        <option>Shopping</option>
+      </select>
+      <button class="btn">Add Transaction</button>
+    </form>
+  </div>
+
+  <script>
+    const balance = document.getElementById('balance');
+    const money_plus = document.getElementById('money-plus');
+    const money_minus = document.getElementById('money-minus');
+    const list = document.getElementById('list');
+    const form = document.getElementById('form');
+    const text = document.getElementById('text');
+    const amount = document.getElementById('amount');
+    const category = document.getElementById('category');
+
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+    function updateValues() {
+      const amounts = transactions.map(t => t.amount);
+      const total = amounts.reduce((acc, item) => acc + item, 0).toFixed(2);
+      const income = amounts.filter(item => item > 0).reduce((acc, item) => acc + item, 0).toFixed(2);
+      const expense = amounts.filter(item => item < 0).reduce((acc, item) => acc + item, 0).toFixed(2);
+
+      balance.innerText = total;
+      money_plus.innerText = `+${income}`;
+      money_minus.innerText = `${expense}`;
+    }
+
+    function addTransactionDOM(transaction) {
+      const sign = transaction.amount > 0 ? '+' : '-';
+      const item = document.createElement('li');
+      item.classList.add(transaction.amount > 0 ? 'plus' : 'minus');
+      item.innerHTML = `
+        ${transaction.text} (${transaction.category}) 
+        <span>${sign}$${Math.abs(transaction.amount)}</span>
+        <button onclick="removeTransaction(${transaction.id})">x</button>
+      `;
+      list.appendChild(item);
+    }
+
+    function removeTransaction(id) {
+      transactions = transactions.filter(t => t.id !== id);
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+      init();
+    }
+
+    function init() {
+      list.innerHTML = '';
+      transactions.forEach(addTransactionDOM);
+      updateValues();
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const transaction = {
+        id: Date.now(),
+        text: text.value,
+        amount: +amount.value,
+        category: category.value
+      };
+      transactions.push(transaction);
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+      addTransactionDOM(transaction);
+      updateValues();
+      text.value = '';
+      amount.value = '';
+    });
+
+    init();
+  </script>
+</body>
+</html>
